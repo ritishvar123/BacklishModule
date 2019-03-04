@@ -1,7 +1,17 @@
 package com.example.hp.backlishmodule;
 
+import android.Manifest;
+import android.app.DownloadManager;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Environment;
+import android.os.Handler;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -26,6 +36,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -34,9 +45,11 @@ import java.util.StringTokenizer;
 
 public class MainActivity extends AppCompatActivity{
 
+    int STORAGE_PERMISSION_CODE = 1;
     InputStreamVolleyRequest request;
     int count;
     Button button;
+    DownloadManager downloadManager;
     ExpandableListView expandableListView;
     ExpandableListAdapter expandableListAdapter;
     List<String> listDataHeader;
@@ -55,68 +68,14 @@ public class MainActivity extends AppCompatActivity{
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         expandableListView = (ExpandableListView)findViewById(R.id.expandableListView);
-        init();
-        expandableListAdapter = new ExpandableListAdapter(MainActivity.this, listDataHeader, listHashMap, img_dot);
-        expandableListView.setAdapter(expandableListAdapter);
         button = (Button)findViewById(R.id.button);
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                /*String url = "https://boxinall.in/kshitiz/export.php";
-                StringRequest stringRequest = new StringRequest(1, url, new Response.Listener<String>() {
-                    @Override
-                    public void onResponse(String response) {
-
-                    }
-                }, new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        Toast.makeText(MainActivity.this, "Slow internet", Toast.LENGTH_LONG).show();
-                    }
-                });
-                RequestQueue requestQueue = Volley.newRequestQueue(MainActivity.this);
-                requestQueue.add(stringRequest);*/
-
-                /*String mUrl="https://boxinall.in/kshitiz/data.csv";
-                request = new InputStreamVolleyRequest(Request.Method.GET, mUrl, MainActivity.this, MainActivity.this, null);
-                RequestQueue mRequestQueue = Volley.newRequestQueue(getApplicationContext(),
-                        new HurlStack());
-                mRequestQueue.add(request);*/
-
-                String mUrl = "https://boxinall.in/kshitiz/data.csv";
-                InputStreamVolleyRequest request = new InputStreamVolleyRequest(Request.Method.GET, mUrl,
-                        new Response.Listener<byte[]>() {
-                            @Override
-                            public void onResponse(byte[] response) {
-                                // TODO handle the response
-                                try {
-                                    if (response!=null) {
-                                        FileOutputStream outputStream;
-                                        String name = "data.txt";
-                                        //String name=<FILE_NAME_WITH_EXTENSION e.g reference.txt>;
-                                        outputStream = openFileOutput(name, Context.MODE_PRIVATE);
-                                        outputStream.write(response);
-                                        outputStream.close();
-                                        Toast.makeText(MainActivity.this, "Download complete.", Toast.LENGTH_LONG).show();
-                                    }
-                                } catch (Exception e) {
-                                    // TODO Auto-generated catch block
-                                    Log.d("KEY_ERROR", "UNABLE TO DOWNLOAD FILE");
-                                    e.printStackTrace();
-                                }
-                            }
-                        } ,new Response.ErrorListener() {
-
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        // TODO handle the error
-                        error.printStackTrace();
-                    }
-                }, null);
-                RequestQueue mRequestQueue = Volley.newRequestQueue(getApplicationContext(), new HurlStack());
-                mRequestQueue.add(request);
-            }
-        });
+        /*if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.WRITE_EXTERNAL_STORAGE) ==
+                PackageManager.PERMISSION_GRANTED) {
+            Toast.makeText(MainActivity.this, "You have already granted permission !!", Toast.LENGTH_LONG).show();
+        } else {
+            requestStorageapermission();
+        }*/
+        requestStorageapermission();
     }
 
     public void init() {
@@ -194,4 +153,131 @@ public class MainActivity extends AppCompatActivity{
     }*/
 
 
+    private void requestStorageapermission() {
+        if (ActivityCompat.shouldShowRequestPermissionRationale(MainActivity.this, Manifest.permission.WRITE_EXTERNAL_STORAGE)){
+            /*new AlertDialog.Builder(MainActivity.this).setTitle("Permission needed")
+                    .setMessage("This permission is needed because of this and that")
+                    .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            ActivityCompat.requestPermissions(MainActivity.this, new String[] {Manifest.permission.WRITE_EXTERNAL_STORAGE}
+                                    , STORAGE_PERMISSION_CODE);
+                        }
+                    })
+                    .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            dialogInterface.dismiss();
+                        }
+                    })
+                    .create().show();*/
+            ActivityCompat.requestPermissions(MainActivity.this, new String[] {Manifest.permission.WRITE_EXTERNAL_STORAGE}
+                    , STORAGE_PERMISSION_CODE);
+        } else {
+            ActivityCompat.requestPermissions(MainActivity.this, new String[] {Manifest.permission.WRITE_EXTERNAL_STORAGE}
+                    , STORAGE_PERMISSION_CODE);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        if (requestCode == STORAGE_PERMISSION_CODE){
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED){
+                //Toast.makeText(MainActivity.this, "Permission Granted", Toast.LENGTH_LONG).show();
+                init();
+                expandableListAdapter = new ExpandableListAdapter(MainActivity.this, listDataHeader, listHashMap, img_dot);
+                expandableListView.setAdapter(expandableListAdapter);
+
+                button.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        Toast.makeText(MainActivity.this, "Please wait for 5 seconds !! Downloading.", Toast.LENGTH_LONG).show();
+                        String url = "https://boxinall.in/BIAOfficeAttendence/export.php";
+                        StringRequest stringRequest = new StringRequest(1, url, new Response.Listener<String>() {
+                            @Override
+                            public void onResponse(String response) {
+                            }
+                        }, new Response.ErrorListener() {
+                            @Override
+                            public void onErrorResponse(VolleyError error) {
+                                Toast.makeText(MainActivity.this, "Slow internet", Toast.LENGTH_LONG).show();
+                            }
+                        });
+                        RequestQueue requestQueue = Volley.newRequestQueue(MainActivity.this);
+                        requestQueue.add(stringRequest);
+
+                /*String mUrl="https://boxinall.in/kshitiz/data.csv";
+                request = new InputStreamVolleyRequest(Request.Method.GET, mUrl, MainActivity.this, MainActivity.this, null);
+                RequestQueue mRequestQueue = Volley.newRequestQueue(getApplicationContext(),
+                        new HurlStack());
+                mRequestQueue.add(request);*/
+
+                /*String mUrl = "https://boxinall.in/kshitiz/data.csv";
+                InputStreamVolleyRequest request = new InputStreamVolleyRequest(Request.Method.GET, mUrl,
+                        new Response.Listener<byte[]>() {
+                            @Override
+                            public void onResponse(byte[] response) {
+                                // TODO handle the response
+                                try {
+                                    if (response!=null) {
+                                        FileOutputStream outputStream;
+                                        String name = "data.txt";
+                                        //String name=<FILE_NAME_WITH_EXTENSION e.g reference.txt>;
+                                        outputStream = openFileOutput(name, Context.MODE_PRIVATE);
+                                        outputStream.write(response);
+                                        outputStream.close();
+                                        Toast.makeText(MainActivity.this, "Download complete.", Toast.LENGTH_LONG).show();
+                                    }
+                                } catch (Exception e) {
+                                    // TODO Auto-generated catch block
+                                    Log.d("KEY_ERROR", "UNABLE TO DOWNLOAD FILE");
+                                    e.printStackTrace();
+                                }
+                            }
+                        } ,new Response.ErrorListener() {
+
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        // TODO handle the error
+                        error.printStackTrace();
+                    }
+                }, null);
+                RequestQueue mRequestQueue = Volley.newRequestQueue(getApplicationContext(), new HurlStack());
+                mRequestQueue.add(request);*/
+
+                        Handler handler = new Handler();
+                        handler.postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                downloadManager = (DownloadManager)getSystemService(Context.DOWNLOAD_SERVICE);
+                /*Uri uri = Uri.parse("https://r1---sn-qxa7snee.googlevideo.com/videoplayback?" +
+                        "ipbits=0&lmt=1540827994292147&ratebypass=yes&c=WEB&txp=5531432&clen=10097738&dur=198.646&source=" +
+                        "youtube&expire=1551696355&requiressl=yes&itag=18&ei=g618XOXHNJavhAfm06SQBg&pl=41&mime=video%2Fmp" +
+                        "4&id=o-AIv8CuIzADqMVXPlcSqH9cZUuLUOpBKB753LMlKS5Xzx&sparams=clen,dur,ei,expire,gir,id,ip,ipbits" +
+                        ",ipbypass,itag,lmt,mime,mip,mm,mn,ms,mv,pl,ratebypass,requiressl,source&fvip=1&key=cms1&ip=" +
+                        "109.167.113.9&gir=yes&signature=5492003D2E2995562E74E882505362F0A7D84F05.55B458E2AAC8ECD23CED7" +
+                        "2FE9D50C563343C9A1E&video_id=0tejvIxP-A4&title=Tom+and+Jerry+Episode+157+The+Mouse+from+H+U+N+G" +
+                        "+E+R+Part+1&rm=sn-nxg8pivnupob-n89e7l,sn-nxg8pivnupob-h5q67e,sn-h5qly76&req_id=c08d5d10388ca3e" +
+                        "e&redirect_counter=3&cms_redirect=yes&ipbypass=yes&mip=2409:4053:81a:49ea:35d3:36d2:5313:a877&" +
+                        "mm=30&mn=sn-qxa7snee&ms=nxu&mt=1551674675&mv=m");*/
+                                Uri uri = Uri.parse("https://boxinall.in/BIAOfficeAttendence/member_details.csv");
+                                Uri uri2 = Uri.parse("https://boxinall.in/BIAOfficeAttendence/timing_details.csv");
+                                DownloadManager.Request request = new DownloadManager.Request(uri);
+                                DownloadManager.Request request2 = new DownloadManager.Request(uri2);
+                                request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+                                request2.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+                                request.setDestinationInExternalPublicDir("/bia", "member_details.csv");
+                                request2.setDestinationInExternalPublicDir("/bia", "timing_details.csv");
+                                Long reference = downloadManager.enqueue(request);
+                                Long reference2 = downloadManager.enqueue(request2);
+                                Toast.makeText(MainActivity.this, "Download Completed", Toast.LENGTH_LONG).show();
+                            }
+                        }, 5000);
+                    }
+                });
+            } else {
+                Toast.makeText(MainActivity.this, "Permission Denied", Toast.LENGTH_LONG).show();
+            }
+        }
+    }
 }
